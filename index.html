@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Relief OODA Command Game — V2.2</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-blue: #38bdf8;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-green: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        header {
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-blue);
+            margin: 0;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Dashboard Bar */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-blue);
+            margin-top: 4px;
+        }
+
+        /* Content Card */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--accent-amber);
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            color: var(--accent-blue);
+            margin-top: 15px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        p, li {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #cbd5e1;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .error-box {
+            background-color: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--accent-red);
+            color: #fca5a5;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        /* Directives & Options */
+        .directive-list {
+            margin-bottom: 20px;
+        }
+
+        .directive-item {
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .option-btn:hover {
+            border-color: var(--accent-blue);
+            background-color: #1e293b;
+        }
+
+        .option-btn strong {
+            color: var(--accent-blue);
+        }
+
+        /* Review / Consequence styling */
+        .consequence-box {
+            background-color: rgba(56, 189, 248, 0.1);
+            border-left: 4px solid var(--accent-blue);
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .btn-next {
+            background-color: var(--accent-blue);
+            color: #0f172a;
+            font-weight: bold;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 1rem;
+        }
+
+        .btn-next:hover {
+            background-color: #7dd3fc;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Flood Relief OODA Command Game</h1>
+            <div class="subtitle">Tactical Decision Exercise — Mission, Adaptation & Resource Judgment</div>
+        </div>
+        <div id="phase-tag" style="font-weight: bold; color: var(--accent-amber);">DECISION 1 OF 10</div>
+    </header>
+
+    <!-- Operational Dashboard -->
+    <div class="dashboard">
+        <div class="stat-card">
+            <div class="stat-label">Evacuated</div>
+            <div class="stat-value" id="stat-evac">0 / 120</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Urgent Medical</div>
+            <div class="stat-value" id="stat-med">6</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Central Reserve</div>
+            <div class="stat-value" id="stat-reserve">20</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">General Stores</div>
+            <div class="stat-value" id="stat-gen-supp">400</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Medical Stores</div>
+            <div class="stat-value" id="stat-med-supp">100</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Team Risk</div>
+            <div class="stat-value" id="stat-risk" style="color: var(--accent-green);">LOW</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Information Quality</div>
+            <div class="stat-value" id="stat-info">50</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Responder Fatigue</div>
+            <div class="stat-value" id="stat-fatigue">10</div>
+        </div>
+    </div>
+
+    <div class="error-box" id="error-box">
+        <strong>COMMAND COHERENCE FAILURE:</strong> The selected combination contains contradictory directives. Re-evaluate your plan.
+    </div>
+
+    <!-- Main Dynamic Card -->
+    <div class="card" id="game-card">
+        <!-- Injected via JS -->
+    </div>
+</div>
+
+<script>
+    // Master State Engine
+    const gameState = {
+        currentPhase: 1,
+        civiliansEvacuated: 0,
+        totalCivilians: 120,
+        urgentMedical: 6,
+        reserve: 20,
+        genSupplies: 400,
+        medSupplies: 100,
+        risk: "LOW",
+        floodEquipmentCommitted: false,
+        vehicleUsable: true,
+        secondTeamArrived: false,
+        bridgeRecon: false,
+        bridgeFixed: false,
+        reserveStaged: false,
+        vehicleCommitted: false,
+        localInitiative: 50,
+        informationQuality: 50,
+        oodaTempo: 50,
+        responderFatigue: 10,
+        optionValue: 80,
+        decisionsChanged: 0,
+        previousRisk: "LOW",
+        history: []
+    };
+
+    // Scenario Content Data
+    const phases = {
+        1: {
+            title: "0600 HOURS — DAY 1: THE WATER IS RISING",
+            painting: `
+                <p>Heavy rainfall over the previous 12 hours has caused serious flooding in the valley. A landslide has blocked the main road to a settlement of 120 civilians. Access is deteriorating.</p>
+                <div class="section-title">Civilian Situation</div>
+                <ul>
+                    <li>120 civilians isolated (6 require urgent medical attention).</li>
+                    <li>Essential stocks in settlement estimated to last ~24 hours.</li>
+                </ul>
+                <div class="section-title">Access & Weather</div>
+                <ul>
+                    <li>Temporary bridge usable by 3-ton vehicle, but condition deteriorating rapidly.</li>
+                    <li>Main road completely blocked. Heavy rain forecast to increase at 1400 hours.</li>
+                </ul>
+                <div class="section-title">Available Force</div>
+                <p>Alpha (10), Bravo (10), Charlie (10), Central Reserve (20), Medical Cell (5), 1x 3-ton vehicle, General Supplies (400), Medical Supplies (100), Flood Package (1).</p>
+                <p>Local official requests immediate relief supply delivery to a safe-side school with 36 hours of existing stocks.</p>
+            `,
+            directives: [
+                "I. Begin evacuation preparation with Alpha using its existing 10 personnel.",
+                "II. Commit the 3-ton vehicle to support Alpha's initial evacuation movement.",
+                "III. Commit part of the 20-person central reserve to Alpha immediately.",
+                "IV. Dispatch Charlie to conduct immediate point reconnaissance on bridge integrity and access routes.",
+                "V. Send Bravo forward with general relief supplies to the isolated settlement immediately."
+            ],
+            options: [
+                { id: "A", text: "A. I only (Prepare evacuation; hold vehicle & Charlie)", directives: ["I"] },
+                { id: "B", text: "B. I + II (Prepare evacuation & commit vehicle immediately)", directives: ["I", "II"] },
+                { id: "C", text: "C. I + II + IV (Evacuation prep, vehicle movement, & Charlie bridge recon)", directives: ["I", "II", "IV"] },
+                { id: "D", text: "D. III + V (Commit reserve & send Bravo forward with relief stores)", directives: ["III", "V"] },
+                { id: "E", text: "E. I + III + V (Evacuation prep, commit reserve, & push Bravo forward)", directives: ["I", "III", "V"] }
+            ],
+            outcomes: {
+                "A": { evac: 0, res: 0, gen: 0, med: 0, risk: "MODERATE", msg: "Alpha prepares, but vehicle remains unused and bridge window narrows.", lesson: "Economy of Force vs. Lost Opportunity" },
+                "B": { evac: 15, res: 0, gen: 0, med: 0, risk: "HIGH", msg: "Initial evacuation begins quickly, but bridge condition remains unmonitored.", lesson: "Speed without Reconnaissance" },
+                "C": { evac: 20, res: 0, gen: -60, med: -15, risk: "LOW", msg: "Strong initial position. Initial evacuation starts while Charlie establishes bridge monitoring.", lesson: "Concentration + Reconnaissance" },
+                "D": { evac: 0, res: -12, gen: -100, med: 0, risk: "HIGH", msg: "Relief supplies move, but evacuation is delayed while bridge deteriorates.", lesson: "Solving Non-Critical Problems First" },
+                "E": { evac: 15, res: -10, gen: -100, med: 0, risk: "HIGH", msg: "Multiple efforts initiated, but central reserve flexibility drops sharply.", lesson: "Premature Dispersion of Reserves" }
+            }
+        },
+        2: {
+            title: "0830 HOURS — THE BRIDGE WILL NOT WAIT",
+            painting: `
+                <div class="section-title">Emerging Situation</div>
+                <ul>
+                    <li>Alpha completed initial evacuation. 20 civilians are now safe.</li>
+                    <li>Charlie reports the bridge is deteriorating faster than expected; vehicle access will close within 90–120 minutes.</li>
+                    <li>Bravo reports settlement general supplies OK for 6 hours; medical supplies are becoming critical.</li>
+                    <li>A report suggests a secondary road may reopen later today, but this has not yet been confirmed.</li>
+                    <li>Reinforcement team with bridging capability is expected at 1200 Hours and cannot help the current bridge window.</li>
+                </ul>
+            `,
+            directives: [
+                "I. Continue Alpha's evacuation while the bridge remains usable for the vehicle.",
+                "II. Move the vehicle to Bravo before bridge access deteriorates further.",
+                "III. Use Charlie to support Bravo while Alpha continues its priority evacuation.",
+                "IV. Commit 5 personnel from the central reserve to accelerate Alpha's evacuation.",
+                "V. Suspend major movement until the second team arrives."
+            ],
+            options: [
+                { id: "A", text: "A. I + III (Max evacuation tempo + Charlie supports Bravo; reserve intact)", directives: ["I", "III"] },
+                { id: "B", text: "B. II + III (Divert vehicle to Bravo; priority shifts to supply)", directives: ["II", "III"] },
+                { id: "C", text: "C. I + IV (Accelerate evacuation using 5 reserve personnel)", directives: ["I", "IV"] },
+                { id: "D", text: "D. I + III + IV (Accelerate evacuation + Charlie supports Bravo + spend reserve)", directives: ["I", "III", "IV"] },
+                { id: "E", text: "E. V (Pause major movement until 1200 Hours)", directives: ["V"] }
+            ],
+            outcomes: {
+                "A": { evac: 24, res: 0, gen: -60, med: -10, risk: "LOW", msg: "Bridge window fully utilized for evacuation. 44 civilians total evacuated. Reserve intact.", lesson: "Tempo + Concentration" },
+                "B": { evac: 5, res: 0, gen: -100, med: -10, risk: "HIGH", msg: "Vehicle diverted to supply. Evacuation window missed before vehicle bridges back.", lesson: "Misaligned Priorities under Time Pressure" },
+                "C": { evac: 30, res: -5, gen: -40, med: -10, risk: "MODERATE", msg: "Evacuation accelerated using reserve. Total 50 evacuated, reserve down to 15.", lesson: "Buying Tempo with Reserves" },
+                "D": { evac: 32, res: -5, gen: -50, med: -10, risk: "MODERATE", msg: "Maximum short-term output achieved, but central reserve reduced.", lesson: "Immediate Output vs. Future Readiness" },
+                "E": { evac: 0, res: 0, gen: -20, med: 0, risk: "HIGH", msg: "Bridge closes to vehicles while waiting. Opportunity window lost.", lesson: "Passivity Increases Mission Risk" }
+            }
+        },
+        3: {
+            title: "1000 HOURS — THE PROBLEM MOVES",
+            painting: `
+                <div class="section-title">Emerging Situation</div>
+                <ul>
+                    <li>The bridge is now CLOSED to the 3-ton vehicle. Foot crossing remains possible. Water has entered lower distribution areas.</li>
+                    <li>Bravo requires flood equipment/manpower at distribution point.</li>
+                    <li>10 civilians now require active medical monitoring.</li>
+                    <li>Request for sandbags for safe-side administrative building (adequately staffed locally).</li>
+                    <li>Reinforcement team (with bridging capability) arriving in 2 hours.</li>
+                </ul>
+            `,
+            directives: [
+                "I. Continue concentrating the current effort on the remaining civilian evacuation.",
+                "II. Use Charlie to support Bravo's emerging flood/supply problem.",
+                "III. Commit part of the central reserve to create additional relief capacity.",
+                "IV. Use organic flood-relief equipment package at Bravo's distribution area.",
+                "V. Preserve reserve and flood-relief equipment for the arrival of the second team."
+            ],
+            options: [
+                { id: "A", text: "A. I + II (Evacuation continues + Charlie supports Bravo; preserve equipment & reserve)", directives: ["I", "II"] },
+                { id: "B", text: "B. I + IV (Evacuation continues + deploy flood equipment to Bravo)", directives: ["I", "IV"] },
+                { id: "C", text: "C. II + III (Support Bravo + spend 10 reserve personnel)", directives: ["II", "III"] },
+                { id: "D", text: "D. I + II + IV + V (Contradiction Test)", directives: ["I", "II", "IV", "V"], coherent: false },
+                { id: "E", text: "E. III + V (Commit reserve but hold back flood equipment)", directives: ["III", "V"] }
+            ],
+            outcomes: {
+                "A": { evac: 20, res: 0, gen: -40, med: -5, risk: "LOW", msg: "Evacuation continues via footbridge. Flood equipment retained for contingencies.", lesson: "Economy of Force & Preservation" },
+                "B": { evac: 18, res: 0, gen: -40, med: -5, risk: "LOW", flood: true, msg: "Distribution area stabilized with specialist equipment. organic package consumed.", lesson: "Solving Current Bottleneck with Specialist Assets" },
+                "C": { evac: 10, res: -10, gen: -50, med: -5, risk: "MODERATE", msg: "Manpower spent to fix flood issue, reducing central reserve right before team arrival.", lesson: "Using Manpower Instead of Equipment" },
+                "E": { evac: 10, res: -5, gen: -30, med: -5, risk: "HIGH", msg: "Reserve spent without solving the actual equipment-bound flood bottleneck.", lesson: "Mis-matching Resources to Bottlenecks" }
+            }
+        },
+        4: {
+            title: "1130 HOURS — KEEP SOMETHING IN YOUR POCKET",
+            painting: `
+                <div class="section-title">Emerging Situation</div>
+                <ul>
+                    <li>Second response team is 90 minutes away.</li>
+                    <li>Weather service reports 60% probability of severe rainfall between 1300–1500 hours.</li>
+                    <li>Civilians remaining: ~52. Bridge unsuitable for 3-tonner. Foot access narrowing.</li>
+                    <li>Medical demand is manageable with the existing cell.</li>
+                    <li>Local authority requests personnel to protect a safe public building.</li>
+                </ul>
+            `,
+            directives: [
+                "I. Commit remaining central reserve to accelerate evacuation before rainfall.",
+                "II. Keep the central reserve intact.",
+                "III. Move reserve closer to access area without committing it.",
+                "IV. Reassign Charlie as central reserve and commit existing reserve.",
+                "V. Reduce evacuation effort until second team arrives."
+            ],
+            options: [
+                { id: "A", text: "A. I only (Commit all remaining reserve to evacuation)", directives: ["I"] },
+                { id: "B", text: "B. II only (Keep central reserve intact in location)", directives: ["II"] },
+                { id: "C", text: "C. II + III (Keep reserve intact but stage forward for agility)", directives: ["II", "III"] },
+                { id: "D", text: "D. I + IV (Spend reserve, swap Charlie to reserve status)", directives: ["I", "IV"] },
+                { id: "E", text: "E. III + V (Reposition reserve but slow evacuation tempo)", directives: ["III", "V"] }
+            ],
+            outcomes: {
+                "A": { evac: 25, res: -15, gen: -30, med: -5, risk: "HIGH", msg: "Evacuation surges, but central reserve drops to zero before storm hits.", lesson: "Spending Options Early" },
+                "B": { evac: 15, res: 0, gen: -20, med: -5, risk: "LOW", msg: "Steady evacuation pace. Full reserve preserved for weather shift.", lesson: "Preserving Operational Flexibility" },
+                "C": { evac: 18, res: 0, gen: -20, med: -5, risk: "LOW", msg: "Optimal positioning. Reserve staged forward while preserving future flexibility.", lesson: "Positional Advantage of Reserves" },
+                "D": { evac: 22, res: -10, gen: -25, med: -5, risk: "MODERATE", msg: "High output, but reserve quality degraded by substituting specialist element.", lesson: "Reserve Quality Dynamics" },
+                "E": { evac: 5, res: 0, gen: -10, med: -5, risk: "MODERATE", msg: "Forces well-preserved, but civilian evacuation falls behind schedule.", lesson: "Opportunity Cost of Excess Caution" }
+            }
+        },
+        5: {
+            title: "1300 HOURS — HELP HAS ARRIVED",
+            painting: `
+                <p>The second response team arrives with 20 personnel, 5 medical staff, enhanced flood equipment, bridging assets, and fresh supplies.</p>
+                <div class="section-title">Command Question</div>
+                <p>Do you use the new specialist capability specifically to fix the bridge bottleneck, or spread reinforcement across all ongoing tasks?</p>
+                <p>Bravo requests the ENTIRE second team for general distribution without verification.</p>
+            `,
+            directives: [
+                "I. Use second team specialist capability primarily to restore bridge access.",
+                "II. Transfer entire evacuation mission to second team.",
+                "III. Keep original teams (Alpha/Bravo/Charlie) on existing tasks while second team bridges access.",
+                "IV. Commit original reserve together with second team.",
+                "V. Keep entire second team uncommitted as a new reserve."
+            ],
+            options: [
+                { id: "A", text: "A. I + III (Focus second team on bridging; original teams maintain main effort)", directives: ["I", "III"] },
+                { id: "B", text: "B. II + IV (Transfer evacuation to 2nd team & spend original reserve)", directives: ["II", "IV"] },
+                { id: "C", text: "C. I + II + III (Command Tension: Transfer mission & retain original teams)", directives: ["I", "II", "III"], coherent: false },
+                { id: "D", text: "D. III + V (Hold second team in reserve; bridge remains un-repaired)", directives: ["III", "V"] },
+                { id: "E", text: "E. I + IV + V (Contradiction: Use specialist capability & hold uncommitted)", directives: ["I", "IV", "V"], coherent: false }
+            ],
+            outcomes: {
+                "A": { evac: 20, res: 0, gen: 100, med: 50, risk: "LOW", bridgeFixed: true, msg: "Bridge access restored for heavy vehicles. Operational momentum regained cleanly.", lesson: "Targeted Integration of Specialist Reinforcements" },
+                "B": { evac: 25, res: -10, gen: 50, med: 20, risk: "HIGH", msg: "High output but command confusion arises from total mission transfer.", lesson: "Mass vs. Organizational Friction" },
+                "D": { evac: 8, res: 0, gen: 20, med: 10, risk: "MODERATE", msg: "Reinforcement capability wasted while main access bottleneck remains open.", lesson: "Unused Support under Critical Bottlenecks" }
+            }
+        },
+        6: {
+            title: "1500 HOURS — THE MEDICAL BOTTLENECK",
+            painting: `
+                <div class="section-title">Emerging Situation</div>
+                <ul>
+                    <li>Bridge access is restored. Main evacuation is nearly complete.</li>
+                    <li>Medical cases have risen to 15, with 5 requiring continuous monitoring.</li>
+                    <li>10 total medical personnel are available (5 original + 5 reinforcement).</li>
+                    <li>Medical supplies are down to ~72 units. Floodwaters are inundating the lower distribution point.</li>
+                    <li>Distant sector reports a potential supply need in 10 hours.</li>
+                </ul>
+            `,
+            directives: [
+                "I. Concentrate available medical personnel at the main medical requirement.",
+                "II. Retain some medical capability centrally.",
+                "III. Use general personnel for non-specialist medical logistics and transport.",
+                "IV. Push all remaining medical supplies forward immediately.",
+                "V. Stop all non-medical relief activity."
+            ],
+            options: [
+                { id: "A", text: "A. I only (Concentrate all medical staff; zero medical reserve)", directives: ["I"] },
+                { id: "B", text: "B. I + II + III (Concentrate main medical team, retain central med reserve, use general troops for logistics)", directives: ["I", "II", "III"] },
+                { id: "C", text: "C. I + IV (Concentrate medical staff & push all med stores forward)", directives: ["I", "IV"] },
+                { id: "D", text: "D. II + III + IV (Retain med reserve, push supplies, use general staff logistics)", directives: ["II", "III", "IV"] },
+                { id: "E", text: "E. I + V (Halt all general relief to focus strictly on medical)", directives: ["I", "V"] }
+            ],
+            outcomes: {
+                "A": { evac: 10, urgentMed: -4, gen: -20, med: -20, risk: "MODERATE", msg: "Medical situation stabilized, but no reserve remains for new medical surges.", lesson: "Over-Concentration of Specialist Assets" },
+                "B": { evac: 12, urgentMed: -6, gen: -20, med: -15, risk: "LOW", msg: "Optimal balance. Medical cases stabilized while preserving logistics flow and flexibility.", lesson: "Economy of Specialist Forces" },
+                "C": { evac: 10, urgentMed: -6, gen: -20, med: -40, risk: "HIGH", msg: "Medical surge resolved, but central medical stock exhausted.", lesson: "Forward Consumption Risk" },
+                "D": { evac: 10, urgentMed: -3, gen: -20, med: -30, risk: "MODERATE", msg: "Supplies pushed forward prematurely while medical output remained moderate.", lesson: "Misaligned Logistics Push" },
+                "E": { evac: 0, urgentMed: -6, gen: 0, med: -20, risk: "HIGH", msg: "Medical problem fixed, but general relief mission stalled entirely.", lesson: "Single-Task Myopia" }
+            }
+        },
+        7: {
+            title: "1700 HOURS — YOU ARE SPENDING TOMORROW",
+            painting: `
+                <div class="section-title">Emerging Situation</div>
+                <ul>
+                    <li>Evacuation is ~90% complete.</li>
+                    <li>Immediate stores: 145 General / 48 Medical. Required for next 12 hours: 130 General / 40 Medical (very tight margin).</li>
+                    <li>Heavy overnight rain is expected. Troops are fatigued from 11 hours of operation.</li>
+                    <li>A report suggests a road might open tomorrow, but this is not confirmed.</li>
+                </ul>
+            `,
+            directives: [
+                "I. Continue at maximum tempo until all remaining evacuation is completed tonight.",
+                "II. Complete only highest-priority remaining movements tonight.",
+                "III. Reduce activity to preserve personnel and supplies for next 12 hours.",
+                "IV. Request additional external replenishment now.",
+                "V. Use remaining medical supplies aggressively while demand is manageable."
+            ],
+            options: [
+                { id: "A", text: "A. I only (Push max tempo; exhaust troops and supplies)", directives: ["I"] },
+                { id: "B", text: "B. II + III (Controlled tempo: Priority moves only + preserve force)", directives: ["II", "III"] },
+                { id: "C", text: "C. II + III + IV (Controlled tempo + Request external resupply)", directives: ["II", "III", "IV"] },
+                { id: "D", text: "D. I + IV + V (Max tempo + aggressive supply consumption)", directives: ["I", "IV", "V"] },
+                { id: "E", text: "E. III + IV (Halt operations to preserve forces while requesting supply)", directives: ["III", "IV"] }
+            ],
+            outcomes: {
+                "A": { evac: 15, res: -5, gen: -40, med: -20, risk: "HIGH", msg: "Evacuation completed, but force enters severe storm completely exhausted.", lesson: "Consuming Force Capacity for Immediate Closure" },
+                "B": { evac: 8, res: 0, gen: -15, med: -5, risk: "LOW", msg: "Balanced posture. Essential evacuations completed while force retains 12-hour reserve.", lesson: "Force Preservation & Sustainability" },
+                "C": { evac: 8, res: 0, gen: -15, med: -5, risk: "LOW", msg: "Prudent posture. Operations sustained cleanly while queuing replenishment.", lesson: "Sustainment Planning without Over-Reliance" },
+                "D": { evac: 15, res: -5, gen: -50, med: -30, risk: "HIGH", msg: "Mission complete but zero supply margin remains for overnight emergencies.", lesson: "Burning the Candle at Both Ends" },
+                "E": { evac: 2, res: 0, gen: -5, med: 0, risk: "MODERATE", msg: "High sustainability achieved, but isolated civilians remain in high-risk zones overnight.", lesson: "Excessive Operational Pause" }
+            }
+        },
+        8: {
+            title: "1900 HOURS — TWO REPORTS, ONE DECISION",
+            painting: `
+                <div class="section-title">Emerging Situation</div>
+                <ul>
+                    <li>Conflicting intelligence from Northern Sector: Report A says floodwaters are falling; Report B, 20 minutes later, says localized flooding is rising rapidly. Both sources are normally reliable.</li>
+                    <li>60 minutes remain before major resource commitment is required.</li>
+                    <li>Communications are intermittent.</li>
+                </ul>
+            `,
+            directives: [
+                "I. Dispatch reconnaissance element immediately to verify ground conditions.",
+                "II. Commit central reserve immediately to northern sector based on flooding report.",
+                "III. Hold main operational units in place while maintaining current risk measures.",
+                "IV. Divert medical/transport assets away from ongoing tasks for northern deployment.",
+                "V. Use alternative comms and local observer networks to cross-check reports."
+            ],
+            options: [
+                { id: "A", text: "A. I + III (Recon northern sector + hold main body in place)", directives: ["I", "III"] },
+                { id: "B", text: "B. II + IV (Immediate heavy commitment based on unverified report)", directives: ["II", "IV"] },
+                { id: "C", text: "C. I + III + V (Recon + Hold main body + Cross-check local observers)", directives: ["I", "III", "V"] },
+                { id: "D", text: "D. II + III (Contradiction: Commit reserve immediately while holding in place)", directives: ["II", "III"], coherent: false },
+                { id: "E", text: "E. I + IV + V (Recon + Divert medical assets + Cross-check comms)", directives: ["I", "IV", "V"] }
+            ],
+            outcomes: {
+                "A": { evac: 2, res: 0, gen: -5, med: 0, risk: "LOW", msg: "Recon confirms water increase was localized runoff. Main body preserved.", lesson: "Verification Before Commitment" },
+                "B": { evac: 0, res: -10, gen: -20, med: -10, risk: "HIGH", msg: "Reserves committed to false alarm, creating vulnerability in active sectors.", lesson: "Reacting to Unverified Intelligence" },
+                "C": { evac: 3, res: 0, gen: -5, med: 0, risk: "LOW", msg: "Optimal recon & cross-checking. Ground verified in 30 mins with zero wasted force.", lesson: "Multi-Source Information Verification" },
+                "E": { evac: 2, res: 0, gen: -5, med: -10, risk: "MODERATE", msg: "Information verified, but medical assets unnecessarily disrupted.", lesson: "Disrupting Unaffected Lines of Effort" }
+            }
+        },
+        9: {
+            title: "2200 HOURS — THE SECOND WAVE",
+            painting: `
+                <p>Severe flash flood surges down valley overnight. Temporary culvert damaged, threatening to isolate remaining 10 civilians and forward medical post within 45 minutes.</p>
+            `,
+            directives: [
+                "I. Commit second team specialist bridging asset immediately to secure culvert crossing.",
+                "II. Execute immediate emergency extraction of forward medical post and civilians using light vehicles.",
+                "III. Halt movement and order all forward elements to shelter in place.",
+                "IV. Reassign Bravo distribution team to assist Alpha with rapid physical evacuation along high track.",
+                "V. Consolidate remaining supplies into central bunker."
+            ],
+            options: [
+                { id: "A", text: "A. II + IV (Emergency vehicle extraction + Bravo/Alpha joint high-track evacuation)", directives: ["II", "IV"] },
+                { id: "B", text: "B. I + II + IV (Deploy bridging asset + extract forward post + joint physical evac)", directives: ["I", "II", "IV"] },
+                { id: "C", text: "C. III + V (Shelter in place & consolidate supplies)", directives: ["III", "V"] },
+                { id: "D", text: "D. I + III (Deploy bridging asset + order forward units to shelter in place)", directives: ["I", "III"] },
+                { id: "E", text: "E. II + V (Emergency extraction + bunker supplies)", directives: ["II", "V"] }
+            ],
+            outcomes: {
+                "A": { evac: 8, res: 0, gen: -10, med: 0, risk: "MODERATE", msg: "Successful extraction along high track, though culvert access lost.", lesson: "Flexibility in Route Selection" },
+                "B": { evac: 10, res: 0, gen: -10, med: 0, risk: "LOW", msg: "Bridging asset stabilizes culvert while joint team completes 100% evacuation.", lesson: "Synchronized Rapid Response" },
+                "C": { evac: 0, urgentMed: 2, gen: 0, med: 0, risk: "HIGH", msg: "Forward medical post cut off by floodwaters. Casualties incurred.", lesson: "Passivity in Dynamic Crises" },
+                "D": { evac: 2, res: 0, gen: -5, med: 0, risk: "HIGH", msg: "Bridge deployed but forward teams ordered not to move; opportunity wasted.", lesson: "Conflicting Tactical Intent" },
+                "E": { evac: 7, res: 0, gen: -5, med: 0, risk: "MODERATE", msg: "Extraction successful, but supply consolidation slowed movement.", lesson: "Secondary Tasks Hindering Primary Objective" }
+            }
+        },
+        10: {
+            title: "0600 HOURS (DAY 2) — FINAL TRANSITION & HANDOVER",
+            painting: `
+                <div class="section-title">Emerging Situation</div>
+                <ul>
+                    <li>Weather stabilizes. All civilians are accounted for.</li>
+                    <li>External Civil Disaster Authorities arrive on scene to assume long-term recovery.</li>
+                    <li>Operational control must now transfer cleanly without compromising civilian safety or force accountability.</li>
+                </ul>
+            `,
+            directives: [
+                "I. Conduct formal operational handover of sector logs, civilian medical profiles, and structural risks.",
+                "II. Order immediate tactical withdrawal of all units without briefing incoming teams.",
+                "III. Maintain joint security/medical monitoring footprint with regional authorities during transition.",
+                "IV. Consolidate and audit all remaining medical, fuel, and relief supplies for recovery.",
+                "V. Release all personnel immediately for 48 hours rest prior to operational debrief."
+            ],
+            options: [
+                { id: "A", text: "A. I + II (Formal handover + Immediate withdrawal)", directives: ["I", "II"], coherent: false },
+                { id: "B", text: "B. I + III + IV (Formal handover + Joint monitoring + Resource audit)", directives: ["I", "III", "IV"] },
+                { id: "C", text: "C. II + V (Immediate withdrawal + Immediate rest)", directives: ["II", "V"] },
+                { id: "D", text: "D. III + V (Joint monitoring + Immediate rest release)", directives: ["III", "V"] },
+                { id: "E", text: "E. I + IV + V (Handover + Audit + Immediate rest release)", directives: ["I", "IV", "V"] }
+            ],
+            outcomes: {
+                "B": { evac: 0, res: 0, gen: 0, med: 0, risk: "LOW", msg: "Flawless operational transition. Zero civilian casualties, full asset recovery.", lesson: "Professional Operational Handover" },
+                "C": { evac: 0, res: 0, gen: 0, med: 0, risk: "HIGH", msg: "Abrupt departure creates administrative chaos for civil medical authorities.", lesson: "Neglecting the Handover Phase" },
+                "D": { evac: 0, res: 0, gen: 0, med: 0, risk: "MODERATE", msg: "Joint monitoring active, but uncoordinated rest release leaves gaps.", lesson: "Premature Force Demobilization" },
+                "E": { evac: 0, res: 0, gen: 0, med: 0, risk: "LOW", msg: "Good administrative handover, though staff released before civil footprint fully set.", lesson: "Phased Relief Efficiency" }
+            }
+        }
+    };
+
+    // Render Function
+    function renderPhase() {
+        const errorBox = document.getElementById('error-box');
+        errorBox.style.display = 'none';
+
+        if (gameState.currentPhase > 10) {
+            renderAAR();
+            return;
+        }
+
+        const phaseData = phases[gameState.currentPhase];
+        document.getElementById('phase-tag').innerText = `DECISION ${gameState.currentPhase} OF 10`;
+
+        // Update visible dashboard UI. Internal OODA tempo and future-flexibility variables remain hidden.
+        document.getElementById('stat-evac').innerText = `${gameState.civiliansEvacuated} / ${gameState.totalCivilians}`;
+        document.getElementById('stat-med').innerText = gameState.urgentMedical;
+        document.getElementById('stat-reserve').innerText = gameState.reserve;
+        document.getElementById('stat-gen-supp').innerText = gameState.genSupplies;
+        document.getElementById('stat-med-supp').innerText = gameState.medSupplies;
+        document.getElementById('stat-info').innerText = Math.round(gameState.informationQuality);
+        document.getElementById('stat-fatigue').innerText = Math.round(gameState.responderFatigue);
+        
+        const riskEl = document.getElementById('stat-risk');
+        riskEl.innerText = gameState.risk;
+        riskEl.style.color = gameState.risk === "LOW" ? "var(--accent-green)" : (gameState.risk === "MODERATE" ? "var(--accent-amber)" : "var(--accent-red)");
+
+        // Render Scenario Card
+        let html = `
+            <div class="card-header">${phaseData.title}</div>
+            ${phaseData.painting}
+            <div class="section-title" style="margin-top: 20px;">Directives under Evaluation</div>
+            <div class="directive-list">
+                ${phaseData.directives.map(d => `<div class="directive-item">${d}</div>`).join('')}
+            </div>
+            <div class="section-title">Select ONE Combination</div>
+            <div class="options-grid">
+                ${phaseData.options.map(opt => `
+                    <button class="option-btn" onclick="makeDecision('${opt.id}')">
+                        ${opt.text}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+
+        document.getElementById('game-card').innerHTML = html;
+    }
+
+    // Adaptive state engine. Outcomes remain scenario-authored, but prior decisions
+    // now alter information, tempo, fatigue and future option value.
+    function clamp(v, lo=0, hi=100) { return Math.max(lo, Math.min(hi, v)); }
+
+    function applyStrategicEffects(phase, optionId, outcome) {
+        const before = { ...gameState };
+
+        // Natural environmental pressure: the operation changes even when the commander does not.
+        gameState.responderFatigue = clamp(gameState.responderFatigue + 2);
+        gameState.optionValue = clamp(gameState.optionValue - 1);
+
+        // Information and tempo are affected by the type of action selected.
+        const text = phases[phase].options.find(o => o.id === optionId)?.text || "";
+        if (/recon|verify|monitor|report|information/i.test(text)) {
+            gameState.informationQuality = clamp(gameState.informationQuality + 10);
+            gameState.oodaTempo = clamp(gameState.oodaTempo - 2);
+        } else if (/immediate|rapid|surge|commit|push|deploy/i.test(text)) {
+            gameState.oodaTempo = clamp(gameState.oodaTempo + 6);
+            gameState.informationQuality = clamp(gameState.informationQuality - 2);
+        }
+
+        // Mission-command effects: preserving local initiative is valuable when communications degrade.
+        if (/decentral|local|handover|distributed|delegate/i.test(text)) gameState.localInitiative = clamp(gameState.localInitiative + 8);
+        if (/central|micromanage|hold all|central reserve/i.test(text)) gameState.localInitiative = clamp(gameState.localInitiative - 3);
+
+        // Persistent operational facts. These are deliberately small and interpretable.
+        if (phase === 1 && optionId === 'C') {
+            gameState.bridgeRecon = true;
+            gameState.vehicleCommitted = true;
+            gameState.informationQuality = clamp(gameState.informationQuality + 8);
+        }
+        if (phase === 1 && optionId === 'B') gameState.vehicleCommitted = true;
+        if (phase === 3 && optionId === 'B') gameState.floodEquipmentCommitted = true;
+        if (phase === 4 && optionId === 'C') gameState.reserveStaged = true;
+        if (phase === 5) gameState.secondTeamArrived = true;
+        if (outcome.bridgeFixed === true) gameState.bridgeFixed = true;
+        if (outcome.flood === true) gameState.floodEquipmentCommitted = true;
+
+        // Previous reconnaissance reduces uncertainty at the bridge crisis.
+        if (phase === 2 && gameState.bridgeRecon) {
+            gameState.informationQuality = clamp(gameState.informationQuality + 6);
+            if (optionId === 'A' || optionId === 'C') outcome = { ...outcome, evac: (outcome.evac || 0) + 3, risk: outcome.risk === 'HIGH' ? 'MODERATE' : outcome.risk };
+        }
+
+        // A preserved/staged reserve improves resilience when the storm/second wave arrives.
+        if (phase === 9 && gameState.reserveStaged) {
+            gameState.optionValue = clamp(gameState.optionValue + 8);
+            gameState.responderFatigue = clamp(gameState.responderFatigue - 3);
+        }
+
+        // Excessive fatigue degrades tempo; strong information partly offsets it.
+        if (gameState.responderFatigue > 60) gameState.oodaTempo = clamp(gameState.oodaTempo - 8);
+        if (gameState.informationQuality > 75) gameState.oodaTempo = clamp(gameState.oodaTempo + 3);
+
+        // Resource expenditure has strategic cost beyond the immediate delta.
+        const resourceCost = Math.max(0, -(outcome.res || 0)) + Math.max(0, -(outcome.gen || 0)) / 50 + Math.max(0, -(outcome.med || 0)) / 10;
+        gameState.optionValue = clamp(gameState.optionValue - resourceCost * 1.5);
+        gameState.responderFatigue = clamp(gameState.responderFatigue + Math.max(0, outcome.evac || 0) / 12);
+
+        return outcome;
+    }
+
+    // Process Commitment
+    function makeDecision(optionId) {
+        const phaseData = phases[gameState.currentPhase];
+        const selectedOpt = phaseData.options.find(o => o.id === optionId);
+
+        // Check Coherence Failure
+        if (selectedOpt.coherent === false) {
+            const errorBox = document.getElementById('error-box');
+            errorBox.style.display = 'block';
+            return;
+        }
+
+        let outcome = phaseData.outcomes[optionId];
+        outcome = applyStrategicEffects(gameState.currentPhase, optionId, outcome);
+
+        // Update State
+        if (outcome.evac) gameState.civiliansEvacuated = Math.min(gameState.totalCivilians, gameState.civiliansEvacuated + outcome.evac);
+        if (outcome.res) gameState.reserve = Math.max(0, gameState.reserve + outcome.res);
+        if (outcome.gen) gameState.genSupplies = Math.max(0, gameState.genSupplies + outcome.gen);
+        if (outcome.med) gameState.medSupplies = Math.max(0, gameState.medSupplies + outcome.med);
+        if (outcome.urgentMed) gameState.urgentMedical = Math.max(0, gameState.urgentMedical + outcome.urgentMed);
+        if (outcome.risk) gameState.risk = outcome.risk;
+
+        // Record history
+        gameState.history.push({
+            phase: gameState.currentPhase,
+            choice: optionId,
+            msg: outcome.msg,
+            lesson: outcome.lesson
+        });
+
+        // Show Consequence Card
+        let html = `
+            <div class="card-header" style="color: var(--accent-blue);">DECISION ${gameState.currentPhase} — CONSEQUENCE REVEAL</div>
+            <div class="consequence-box">
+                <p><strong>Immediate Consequence:</strong> ${outcome.msg}</p>
+                <p style="margin-top: 8px; color: var(--accent-amber);"><strong>Commander Reflection:</strong> Before proceeding, identify what changed in the operational state, what assumption may now be wrong, and what information you need next.</p>
+            </div>
+            <button class="btn-next" onclick="nextPhase()">Proceed to Next Situation &rarr;</button>
+        `;
+
+        document.getElementById('game-card').innerHTML = html;
+    }
+
+    function nextPhase() {
+        gameState.currentPhase++;
+        renderPhase();
+    }
+
+    // Render Final After-Action Review
+    function renderAAR() {
+        document.getElementById('phase-tag').innerText = "FINAL AFTER-ACTION REVIEW";
+
+        const missionScore = Math.round((gameState.civiliansEvacuated / gameState.totalCivilians) * 100);
+        const adaptationScore = Math.round((gameState.informationQuality + gameState.oodaTempo + gameState.optionValue + (100 - gameState.responderFatigue)) / 4);
+        const processScore = Math.round(missionScore * 0.45 + adaptationScore * 0.55);
+        let scoreRating = processScore >= 80 && gameState.risk !== "HIGH" ? "EXCELLENT" : (processScore >= 65 ? "SATISFACTORY" : "NEEDS IMPROVEMENT");
+        let scoreColor = scoreRating === "EXCELLENT" ? "var(--accent-green)" : (scoreRating === "SATISFACTORY" ? "var(--accent-amber)" : "var(--accent-red)");
+
+        let html = `
+            <div class="card-header" style="color: ${scoreColor};">OPERATION COMPLETE — RATING: ${scoreRating}</div>
+            
+            <div class="section-title">Final Operational Outcome</div>
+            <ul>
+                <li><strong>Civilians Safely Evacuated:</strong> ${gameState.civiliansEvacuated} / 120</li>
+                <li><strong>Remaining Central Reserve:</strong> ${gameState.reserve} personnel</li>
+                <li><strong>Ending Force Risk Level:</strong> <span style="color: ${scoreColor}">${gameState.risk}</span></li>
+                <li><strong>General / Medical Supplies Remaining:</strong> ${gameState.genSupplies} / ${gameState.medSupplies}</li>
+                <li><strong>Information Quality:</strong> ${Math.round(gameState.informationQuality)} / 100</li>
+                <li><strong>Responder Fatigue:</strong> ${Math.round(gameState.responderFatigue)} / 100</li>
+                <li><strong>Mission / Adaptation / Process:</strong> ${missionScore} / ${adaptationScore} / ${processScore}</li>
+            </ul>
+
+            <div class="consequence-box">
+                <strong>Strategic Interpretation</strong>
+                <p>The exercise evaluates not only how many people were evacuated, but whether the commander maintained the mission, adapted to changing conditions, preserved operational capacity, and managed risk and information effectively.</p>
+            </div>
+
+            <div class="section-title" style="margin-top: 20px;">Decision Log & Demonstrated Principles</div>
+            <div style="margin-top: 10px;">
+                ${gameState.history.map(h => `
+                    <div style="border-bottom: 1px solid var(--border-color); padding: 8px 0; font-size: 0.9rem;">
+                        <strong>Phase ${h.phase} (Option ${h.choice}):</strong> ${h.msg}<br>
+                        <span style="color: var(--accent-amber);">Lesson: ${h.lesson}</span>
+                    </div>
+                `).join('')}
+            </div>
+
+            <button class="btn-next" onclick="location.reload()" style="margin-top: 25px;">Replay Exercise</button>
+        `;
+
+        document.getElementById('game-card').innerHTML = html;
+    }
+
+    // Initialize Game on Load — with a visible fallback if a browser encounters an unexpected error.
+    window.addEventListener("error", function (event) {
+        const box = document.getElementById("error-box");
+        if (box) {
+            box.style.display = "block";
+            box.innerHTML = "<strong>Game loading error.</strong><br>Please reload this file. If the problem persists, the error was: " + (event.message || "unknown browser error");
+        }
+    });
+    window.onload = function () {
+        try {
+            renderPhase();
+        } catch (err) {
+            const box = document.getElementById("error-box");
+            if (box) {
+                box.style.display = "block";
+                box.innerHTML = "<strong>Game could not start.</strong><br>" + String(err.message || err);
+            }
+            console.error(err);
+        }
+    };
+</script>
+
+</body>
+</html>
